@@ -1,4 +1,4 @@
-﻿#include <stdio.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string>
 #include <windows.h>
@@ -23,36 +23,21 @@ File files[MAX_FILES] = {};
 std::mutex mt;
 int place = 0;
 
+
 void createFile(string name) {
-	int flag = 0;
 	File currFile;
 	if (name.size() < MAX_FILE_NAME)
 	{
+		currFile.name = name;
+		currFile.data.clear();
+		currFile.size = 0;
+		files[place] = currFile;
 
-		for (int i = 0; i < MAX_FILES; i++)
-		{
-			if (name == files->name)
-			{
-				cout << "Файл с таким именем уже существует" << endl;
-				flag = 1;
-				break;
-			}
-		}
-		if (flag == 0)
-		{
-			currFile.name = name;
-			currFile.data.clear();
-			currFile.size = 0;
-			files[place] = currFile;
-
-			cout << "Файл был успешно создан" << endl;
-			place++;
-		}
+		cout << "Файл был успешно создан" << endl;
+		place++;
 	}
 	else
 		cout << "Длина имени файла превышает допустимую" << endl;
-
-
 }
 
 int readFile(string name) {//std::cout
@@ -84,27 +69,21 @@ int readFile(string name) {//std::cout
 
 int writeFile(string name, string text) {
 	mt.lock();
-	int flag = 0;
-	if (text.size() >= MAX_DATA_SIZE)
-	{
+	if (text.size() >= MAX_DATA_SIZE) {
 		cout << "Размер данных превышает размер файла" << endl;
 	}
-	else
-	{
-		for (int i = 0; i < MAX_FILES; i++)
-		{
-			if (files[i].name == name)
-			{
-				flag = 1;
+	else {
+		bool found = false;
+		for (int i = 0; i < MAX_FILES; i++) {
+			if (files[i].name == name) {
 				files[i].data = text;
 				files[i].size = text.size();
 				cout << "Данные записаны" << endl;
+				found = true;
 				break;
 			}
-
 		}
-		if (!flag)
-		{
+		if (!found) {
 			cout << "Файл не был найден" << endl;
 		}
 	}
@@ -115,33 +94,19 @@ int writeFile(string name, string text) {
 int deleteFile(string name) {
 	mt.lock();
 	int indexToDelete = 0;
-	int flag = 0;
-	for (int i = 0; i < MAX_FILES; i++)
-	{
-		if (files[i].name == name)
-		{
+	for (int i = 0; i < MAX_FILES; i++) {
+		if (files[i].name == name) {
 			indexToDelete = i;
-			flag = 1;
 			break;
 		}
 	}
-	for (int i = indexToDelete; i < MAX_FILES; i++)
-	{
-		files[i] = files[i + 1];
+	if (indexToDelete != -1) {
+		for (int i = indexToDelete; i < MAX_FILES - 1; i++) {
+			files[i] = files[i + 1];
+		}
+		place = (place > 0) ? place - 1 : 0;
+		cout << (indexToDelete >= 0 ? "Файл удален" : "Файл не был найден") << endl;
 	}
-	if (place > 0)
-	{
-		place--;
-	}
-	else
-		place = 0;
-	if (flag)
-	{
-		cout << "Файл удален" << endl;
-	}
-	else
-		cout << "Файл не был найден" << endl;
-
 	mt.unlock();
 	return 0;
 }
@@ -154,40 +119,29 @@ void fsInfo() {
 			break;
 		}
 	}
-	cout << "N-множество файлов в системе: " << count << endl;
+	cout << "Количество файлов в системе: " << count << endl;
 }
 
-int searchFile(string text)
-{
+int searchFile(string text) {
 	mt.lock();
-	int flag = 0;
-	for (int i = 0; i < MAX_FILES; i++)
-	{
-		if (files[i].name == text)
-		{
+	for (int i = 0; i < MAX_FILES; i++) {
+		if (files[i].name == text) {
 			cout << "Файл существует" << endl;
-			flag = 1;
-			break;
+			mt.unlock();
+			return 0;
 		}
-		else if (files[i].data == text)
-		{
+		else if (files[i].data == text) {
 			cout << "Файл с этим текстом существует" << endl;
-			flag = 1;
-			break;
+			mt.unlock();
+			return 0;
 		}
-
-
 	}
-	if (!flag)
-	{
-		cout << "Файл не был найден" << endl;
-	}
-
+	cout << "Файл не был найден" << endl;
 	mt.unlock();
 	return 0;
-}
+}	
 
-void printCommands()
+void Commands()
 {
 	char command;
 	string nameFile;
@@ -228,7 +182,6 @@ void printCommands()
 			cin.ignore();
 			getline(cin, textFile);
 
-
 			writeFile(nameFile, textFile);
 			break;
 		case '4':
@@ -238,7 +191,6 @@ void printCommands()
 			deleteFile(nameFile);
 			break;
 		case '5':
-			cout << "Информация о файловой системе..." << endl;
 			fsInfo();
 			break;
 		case '6':
@@ -259,7 +211,7 @@ void printCommands()
 int main() {
 	setlocale(LC_ALL, "ru");
 
-	printCommands();
+	Commands();
 
 }
 
